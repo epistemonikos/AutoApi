@@ -12,7 +12,8 @@ DEFAULTS = {
     '_sort': '_id',
     '_limit': 10,
     '_skip': 0,
-    '_regex': False
+    '_regex': False,
+    '_page': 0
 }
 
 
@@ -32,8 +33,13 @@ def get(api, path, mongo_client):
         )]
         limit = request.args.get('_limit')
         limit = int(limit) if limit and limit.isdigit() else DEFAULTS['_limit']
-        skip = request.args.get('_skip')
-        skip = int(skip) if skip and skip.isdigit() else DEFAULTS['_skip']
+        page = request.args.get('_page')
+        if page:
+            page = int(page) if page and page.isdigit() else DEFAULTS['_page'] 
+            skip = (page - 1) * limit
+        else:
+            skip = request.args.get('_skip')
+            skip = int(skip) if skip and skip.isdigit() else DEFAULTS['_skip']
         if request.args.get('_regex') in conditions:
             conditions[request.args.get('_regex')] = {
                 '$regex': conditions[request.args.get('_regex')],
@@ -42,7 +48,14 @@ def get(api, path, mongo_client):
         cursor = mongo_client[api][collection].find(conditions)
         count = cursor.count()
         cursor = cursor.sort(sort_by).limit(limit).skip(skip)
-        response = json.dumps([format_result(element) for element in cursor])
+        pagination_wrap = {
+            'page': page,
+            'skip': skip,
+            'records': [format_result(element) for element in cursor],
+            'total-pages': count/limit + 1,
+            'total-records': count
+        }
+        response = json.dumps(pagination_wrap)
     else:
         try:
             conditions.update({'_id': ObjectId(resource_id)})
