@@ -18,6 +18,7 @@ DEFAULTS = {
 
 def get(api, path, mongo_client):
     status = 200
+    count = 0
     resource_id, collection, conditions = proccess_path(path=path)
     if resource_id is None:
         conditions.update({
@@ -39,6 +40,7 @@ def get(api, path, mongo_client):
                 '$options': 'i'
             }
         cursor = mongo_client[api][collection].find(conditions)
+        count = cursor.count()
         cursor = cursor.sort(sort_by).limit(limit).skip(skip)
         response = json.dumps([format_result(element) for element in cursor])
     else:
@@ -60,8 +62,9 @@ def get(api, path, mongo_client):
                 status = 404
     return Response(
         response=response,
-        headers={'Content-Type': 'application/%s+json' % (
-            'collection' if resource_id is None else 'resource'
-        )},
+        headers={
+            'Pagination-total': count,
+            'Content-Type': 'application/%s+json' % ('collection' if resource_id is None else 'resource')
+        },
         status=status
     )
