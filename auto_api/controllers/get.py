@@ -35,7 +35,7 @@ def get(api, path, mongo_client):
         limit = int(limit) if limit and limit.isdigit() else DEFAULTS['_limit']
         page = request.args.get('_page')
         if page:
-            page = int(page) if page and page.isdigit() else DEFAULTS['_page'] 
+            page = int(page) if page and page.isdigit() else DEFAULTS['_page']
             skip = (page - 1) * limit
         else:
             skip = request.args.get('_skip')
@@ -77,7 +77,9 @@ def get(api, path, mongo_client):
         response=response,
         headers={
             'Pagination-total': count,
-            'Content-Type': 'application/%s+json' % ('collection' if resource_id is None else 'resource')
+            'Content-Type': 'application/%s+json' % (
+                'collection' if resource_id is None else 'resource'
+            )
         },
         status=status
     )
